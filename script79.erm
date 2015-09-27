@@ -1,0 +1,125 @@
+ZVSE
+ERMS_ScriptName=Hero specs
+ERMS_ScriptAuthor=ANRI
+ERMS_ScriptVersion=1.0.0
+ERMS_ScriptDate=27.9(September).2015
+ERMS_ScriptERMVersion=2.70
+ERMS_ScriptLanguage=?????? (????? ?????)? or English (native)
+ERMS_ScriptUsedVariables=v8050-v8055
+ERMS_ScriptUsedFunctions=13600-13602
+_WARNING_#1=IMPORTANT! This file is not in a plain text format. NEVER use any editor except ERM_S for making any kind of changes!
+ERMS_PoweredBy=ERM Scripter v. 2004.10.5.945
+
+---------------------------------Variables--------------------------------------
+;v8050 = Stores unboosted attack
+;v8051 = Stores unboosted defence
+;v8052 = Stores unboosted minimum damage
+;v8053 = Stores unboosted maximum damage
+;v8054 = Stores unboosted speed
+;v8055 = Stores current changed stack, set to -1 if nothing has been boosted
+!#VRv8050:C0/0/0/0/0;
+!#VRv8055:S-1;
+----------------------------Before Action is Taken------------------------------
+;Triggered before an action is made. Variable values are as follows :
+;y1 = Type of action taken, 6 = walk and attack, 7 = shoot
+;y2 = Stores the current attacking stack's ID
+;y3 = Stores the position of the attacking stack
+;y4 = Stores the player that owns the hero
+;y5 = Stores the type ID of the stack
+;y6 = Stores the psotion of the targeted stack
+;y7 = Stores the distance between both stacks calculated by FU13600
+;y8 = Stores the current level of the player, used for scaling
+!?BG0;
+!!BG:A?y1;                    !!BG:N?y2;
+!!BMy2:P?y3;                  !!BG:H?y4;
+!!BM:T?y5;                    !!BG:D?y6;
+!!FU13600:Py3/y6/?y7;         !!HEy4:Ed/?y8;
+--------------------------------Orrin's Scaling---------------------------------
+;The hero used here is Orrin with hero ID of 0
+;y8 = Scaling for maximum damage
+;y9 = Scaling for minimum damage
+!!VRy8&y4=0::2;
+!!VRy9&y4=0:Sy8:2;
+-------------------------------Valeska's Scaling--------------------------------
+;The hero used here is Valeska with hero ID of 0
+;y8 = Scaling for maximum damage
+;y9 = Scaling for minimum damage
+!!VRy8&y4=1::2;
+!!VRy9&y4=1:Sy8:2;
+-------------------------Orrin's Archers Damage Setup---------------------------
+;First FU13602 sets the minimum damage of Orrin's marksmen
+;Second FU13602 sets the maximum damage of Orrin's marksmen
+;Conditions used :
+;y1 = 7  :  action taken is shooting rather than melee attacking
+;y4 = 0  :  hero ID is 0 (Orrin)
+;y5 = 3  :  stack type that's taking the action is 2 (archer)
+;y7 <7 10 :  distance between attacking marksmen and target is lower than 7
+;v8055 = Stores the stack that has been modified in terms of stats for a reset
+!!FU13602&y1=7/y4=0/y5=2/y7<7:Py2/2/y9/?v8052;
+!!FU13602&y1=7/y4=0/y5=2/y7<7:Py2/3/y8/?v8053;
+!!VRv8055&y1=7/y4=0/y5=2/y7<7:Sy2;
+-----------------------Valeska's Marksmen Damage Setup--------------------------
+;First FU13602 sets the minimum damage of Valeska's marksmen
+;Second FU13602 sets the maximum damage of Valeska's marksmen
+;Conditions used :
+;y1 = 7  :  action taken is shooting rather than melee attacking
+;y4 = 1  :  hero ID is 1 (Valeska)
+;y5 = 3  :  stack type that's taking the action is 3 (marksman)
+;y7 > 10 :  distance between attacking marksmen and target is greated than 10
+;v8055 = Stores the stack that has been modified in terms of stats for a reset
+!!FU13602&y1=7/y4=1/y5=3/y7>10:Py2/2/y9/?v8052;
+!!FU13602&y1=7/y4=1/y5=3/y7>10:Py2/3/y8/?v8053;
+!!VRv8055&y1=7/y4=1/y5=3/y7>10:Sy2;
+----------------------------After Action is Taken-------------------------------
+;Triggered after the action has been taken
+;The functions below are used to restore the old stats of a stack before changes
+!?BG1;
+!!FU13602:Pv8055/0/v8050/0;
+!!FU13602:Pv8055/1/v8051/0;
+!!FU13602:Pv8055/2/v8052/0;
+!!FU13602:Pv8055/3/v8053/0;
+!!FU13602:Pv8055/4/v8054/0;
+!!VRv8050:C0/0/0/0/0;
+!!VRv8055:S-1;
+------------------------------Distance Calculator-------------------------------
+;x1 = attacker's position
+;x2 = defender's position
+;x3 = returned distance value
+!?FU13600;
+!!VRy1:Sx1%17;
+!!VRy2:Sx1:17;
+!!VRy3:Sx2%17;
+!!VRy4:Sx2:17;
+!!VRy5:Sy2-y4;
+!!VRy5&y5<0:*-1;
+!!VRy6:Sy1-y3*2;
+!!VRy7:Sy2&1;
+!!VRy8:Sy4&1;
+!!VRy6:-y7+y8;
+!!VRy6&y6<0:*-1;
+!!VRy6:-y5;
+!!VRy7:Sy5*2;
+!!VRy7&y6>0:+y6;
+!!VRy7::2;
+!!VRx3:Sy7;
+-------------------------------Set Specialty Data-------------------------------
+;x1 = hero ID
+;x2 = speciallity ID
+;x3 = Description string
+!?FU13601;
+!!UN:G2x1/1/x2;
+!!UN:G2x1/3/x2;
+!!UN:G2x1/2/x3;
+------------------------------Increase Stack Stats------------------------------
+;x1 = stack ID
+;x2 = stat to boost (0=attack, 1=defence, 2=mindmg, 3=maxdmg, 4=speed
+;x3 = amount
+;x4 = original
+!?FU13602;
+!!BMx1&x2=0:Adx3;
+!!BMx1&x2=1:Ddx3;
+!!BMx1&x2=2:U1/dx3;
+!!BMx1&x2=3:U2/dx3;
+!!BMx1&x2=4:Sdx3;
+!!VRx4:Sx3*-1;
+
